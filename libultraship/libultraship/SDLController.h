@@ -1,10 +1,6 @@
 #pragma once
 #include "Controller.h"
-#if __APPLE__
-#include <SDL.h>
-#else
 #include <SDL2/SDL.h>
-#endif
 
 #define INVALID_SDL_CONTROLLER_GUID (std::string("00000000000000000000000000000000"))
 
