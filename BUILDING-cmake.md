@@ -79,7 +79,7 @@ chmod +x extract_assets_cmake.py
 cmake -S . -B build-cmake -DCMAKE_TOOLCHAIN_FILE=../soh/CMake/Mac-gnu-toolchain.cmake
 cmake --build build-cmake
 
-./extract_assets_cmake.py
+python3 extract_assets_cmake.py
   
 cd ../soh
 cmake -S . -B build-cmake -DCMAKE_TOOLCHAIN_FILE=CMake/Mac-gnu-toolchain.cmake

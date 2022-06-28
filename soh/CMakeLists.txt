@@ -1433,6 +1433,15 @@ set(ALL_FILES
 ################################################################################
 add_executable(${PROJECT_NAME} ${ALL_FILES})
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+	# bundle necessary items into app bundle
+	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+		COMMAND macosx/bundle.sh "${PROJECT_NAME}" "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app"
+		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+		COMMENT "Completing app bundle..."
+	)
+endif()
+
 use_props(${PROJECT_NAME} "${CMAKE_CONFIGURATION_TYPES}" "${DEFAULT_CXX_PROPS}")
 set(ROOT_NAMESPACE soh)
 
@@ -1449,9 +1458,14 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 			INTERPROCEDURAL_OPTIMIZATION_RELEASE "TRUE"
 		)
 	endif()
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+	set_target_properties(${PROJECT_NAME} PROPERTIES
+		MACOSX_BUNDLE "TRUE"
+		MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/macosx/Info.plist"
+	)
 else()
 	set_target_properties(${PROJECT_NAME} PROPERTIES
-	OUTPUT_NAME "soh.elf"
+		OUTPUT_NAME "${PROJECT_NAME}.elf"
 	)
 endif()
 ################################################################################
