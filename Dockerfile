@@ -13,7 +13,6 @@ RUN apt-get update && \
 		p7zip-full \
 		python3.9 \
 		make \
-		cmake \
 		curl \
 		git \
 		lld \
@@ -28,6 +27,14 @@ RUN apt-get update && \
 	g++ --version
 	
 RUN apt-get clean autoclean && apt-get autoremove --yes && rm -rf /var/lib/apt /var/lib/cache /var/lib/log
+
+RUN curl https://github.com/Kitware/CMake/releases/download/v3.23.2/cmake-3.23.2-Linux-x86_64.sh \
+	-s -o /tmp/cmake-install.sh \
+	&& chmod u+x /tmp/cmake-install.sh \
+	&& mkdir /usr/bin/cmake \
+	&& /tmp/cmake-install.sh --skip-license --prefix=/usr/bin/cmake \
+	&& rm /tmp/cmake-install.sh
+ENV PATH="/usr/bin/cmake/bin:${PATH}"
 	
 RUN git clone https://github.com/Perlmint/glew-cmake.git && \
 	cmake glew-cmake && \
