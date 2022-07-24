@@ -55,11 +55,9 @@ ENV SDL2VER=2.0.22
 RUN curl -sLO https://libsdl.org/release/SDL2-${SDL2VER}.tar.gz && \
 	tar -xzf SDL2-${SDL2VER}.tar.gz && \
 	cd SDL2-${SDL2VER} && \
-	./configure --prefix=/usr && \
+	./configure --prefix=/usr --libdir=/lib/x86_64-linux-gnu/ && \
 	make && make install && \
-	rm ../SDL2-${SDL2VER}.tar.gz && \
-	cp -av /lib/libSDL* /lib/x86_64-linux-gnu/ && \
-	cp /usr/lib/cmake/SDL2/sdl2-config.cmake /lib/x86_64-linux-gnu/cmake/SDL2/sdl2-config.cmake
+	rm ../SDL2-${SDL2VER}.tar.gz
 
 RUN mkdir /soh
 WORKDIR /soh
