@@ -58,7 +58,8 @@ RUN curl -sLO https://libsdl.org/release/SDL2-${SDL2VER}.tar.gz && \
 	./configure --prefix=/usr && \
 	make && make install && \
 	rm ../SDL2-${SDL2VER}.tar.gz && \
-	cp -av /lib/libSDL* /lib/x86_64-linux-gnu/
+	cp -av /lib/libSDL* /lib/x86_64-linux-gnu/ && \
+	cp /usr/lib/cmake/SDL2/sdl2-config.cmake /lib/x86_64-linux-gnu/cmake/SDL2/sdl2-config.cmake
 
 RUN mkdir /soh
 WORKDIR /soh
