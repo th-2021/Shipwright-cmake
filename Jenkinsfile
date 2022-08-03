@@ -151,7 +151,7 @@ pipeline {
                             docker run --name sohcont -dit --rm -v $(pwd):/soh sohswitch /bin/bash
                             docker exec sohcont scripts/switch/build.sh
                             
-                            mv build-cmake/soh/soh.nro .
+                            mv build-switch/soh/*.nro soh.nro
                             mv README.md readme.txt
                             
                             7z a soh-switch.7z soh.nro readme.txt
