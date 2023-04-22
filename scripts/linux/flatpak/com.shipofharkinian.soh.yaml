@@ -15,6 +15,7 @@ modules:
   - "modules/glfw/glfw.json"
   - "modules/glu/glu-9.json"
   - "modules/ImageMagick/ImageMagick.json"
+  - "modules/boost/boost.json"
   - name: "soh"
     buildsystem: "simple"
     build-commands:
