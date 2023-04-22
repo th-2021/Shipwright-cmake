@@ -109,6 +109,8 @@ string_view bridgeDungeons            = "The Rainbow Bridge requires completing 
                                         "into the blue warp at the end of them.";          //
 string_view bridgeTokens              = "The Rainbow Bridge requires collecting a\n"       //
                                         "configurable number of Gold Skulltula Tokens.";   //
+string_view bridgeGreg                = "The Rainbow Bridge requires collecting\n"         //
+                                        "Greg the green rupee.";                           //
 /*------------------------------                                                           //
 |      BRIDGE CONDITIONS       |                                                           //
 ------------------------------*/                                                           //
@@ -163,6 +165,17 @@ string_view dungeonEntrancesDesc      = "Shuffle the pool of dungeon entrances, 
                                         "Additionally, the entrances of Deku Tree, Fire\n" //
                                         "Temple, Bottom of the Well and Gerudo Training\n" //
                                         "Ground are opened for both adult and child.";     //
+/*------------------------------                                                           //
+|       BOSS ENTRANCES         |                                                           //
+------------------------------*/                                                           //
+string_view bossEntrancesDesc         = "Shuffle the pool of dungeon boss entrances.\n"    //
+                                        "This affects the boss rooms of all stone and\n"   //
+                                        "medallion dungeons.\n"                            //
+                                        "\n"                                               //
+                                        "Child and adult boss rooms can be shuffled\n"     //
+                                        "separately.\n"                                    //
+                                        "Child may be expected to defeat Phantom Ganon\n"  //
+                                        "and/or Bongo Bongo.";                             //
 /*------------------------------                                                           //
 |      OVERWORLD ENTRANCES     |                                                           //
 ------------------------------*/                                                           //
@@ -238,7 +251,9 @@ string_view decoupledEntrancesDesc    = "Decouple entrances when shuffling them.
                                         "you came from when you go back through an\n"      //
                                         "entrance. This also adds the one-way entrance from"
                                         "Gerudo Valley to Lake Hylia in the pool of\n"     //
-                                        "overworld entrances when they are shuffled.";     //
+                                        "overworld entrances when they are shuffled.\n"    //
+                                        "Boss entrances are currently excluded from this\n"//
+                                        "and remain coupled regardless.";                  //
 /*------------------------------                                                           //
 |      BOMBCHUS IN LOGIC       |                                                           //
 ------------------------------*/                                                           //
@@ -343,6 +358,18 @@ string_view shopsFour                 = "Vanilla shop items will be shuffled amo
 string_view shopsRandom               = "Vanilla shop items will be shuffled among\n"      //
                                         "different shops, and each shop will contain\n"    //
                                         "1-4 non-vanilla shop items.";                     //
+                                                                                           //
+/*------------------------------                                                           //
+|     SHOPSANITY PRICES        |                                                           //
+------------------------------*/                                                           //
+string_view shopPriceBalanced         = "Weighted randomization, max 300.";                //
+string_view shopPriceStarter          = "True randomization, max 95";                      //
+string_view shopPriceAdult            = "True randomization, max 200";                     //
+string_view shopPriceGiant            = "True randomization, max 500";                     //
+string_view shopPriceTycoon           = "True randomization, max 995";                     //
+string_view shopPriceAffordable       = "Cap shop prices to affordable value just above"   //
+                                        "the previous tier wallet's max value";            //
+                                                                                           //
 /*------------------------------                                                           //
 |         TOKENSANITY          |                                                           //
 ------------------------------*/                                                           //
@@ -355,7 +382,7 @@ string_view tokensOverworld           = "This only shuffles the GS locations tha
                                         "outside of dungeons.";                            //
 string_view tokensAllTokens           = "Effectively adds 100 new locations for items to\n"//
                                         "appear.";                                         //
-                                                                                           //
+
 /*------------------------------                                                           //
 |        SCRUB SHUFFLE         |                                                           //
 ------------------------------*/                                                           //
@@ -458,6 +485,15 @@ string_view chestMinigameDesc         = "The 5 key chests in the Treasure Chest 
                                         "\n"                                               //
                                         "If you choose the \"pack\" option, you will get\n"//
                                         "all the keys at once, in a single item.";         //
+                                                                                           //
+/*------------------------------                                                           //
+|    SHUFFLE 100 GS REWARD     |                                                           //
+------------------------------*/                                                           //
+string_view shuffle100GsDesc          = "The cursed rich man in the House of Skulltula\n"  //
+                                        "will give you a random item for collecting all\n" //
+                                        "100 Gold Skulltula Tokens, then he will give you\n"
+                                        "Huge Rupees.";                                    //
+                                                                                           //
 /*------------------------------                                                           //
 |      MAPS AND COMPASSES      |                                                           //
 ------------------------------*/                                                           //
@@ -558,6 +594,9 @@ string_view ganonKeyAnywhere          = "Ganon's Castle Boss Key can appear anyw
 string_view ganonKeyLACS              = "These settings put the boss key on the Light Arrow"
                                         "Cutscene location, from Zelda in Temple of Time as"
                                         "adult, with differing requirements.";             //
+string_view ganonKey100GS             = "Ganon's Castle Boss Key is given to you by the\n" //
+                                        "cursed rich man in the House of Skulltula after\n"//
+                                        "you collect all 100 Gold Skulltula Tokens.";      //
 /*------------------------------                                                           //
 |        LACS CONDITIONS       |                                                           //
 ------------------------------*/                                                           //
@@ -1396,6 +1435,12 @@ string_view LogicShadowStatueDesc                     = "Difficulty: Novice\n"  
                                                         "By sending a Bombchu around the edge of the gorge,"
                                                         "you can knock down the statue without needing a\n"//
                                                         "Bow. Applies in both vanilla and MQ Shadow.";     //
+string_view LogicShadowBongoDesc                      = "Difficulty Expert\n"                              //
+                                                        "Using precise sword slashes, Bongo Bongo can be\n"//
+                                                        "defeated without using projectiles.\n"            //
+                                                        "This trick is much more difficult when done with\n"
+                                                        "Kokiri Sword vs Master Sword or Biggorron Sword.\n"
+                                                        "Useful for Boss Entrance Randomizer.";            //
 string_view LogicChildDeadhandDesc                    = "Difficulty: Novice\n"                             //
                                                         "Requires 9 sticks or 5 jump slashes.";            //
 string_view LogicGtgWithoutHookshotDesc               = "Difficulty: Expert\n"                             //

@@ -22,6 +22,7 @@ void Fishing_UpdateFish(Actor* thisx, PlayState* play);
 void Fishing_UpdateOwner(Actor* thisx, PlayState* play);
 void Fishing_DrawFish(Actor* thisx, PlayState* play);
 void Fishing_DrawOwner(Actor* thisx, PlayState* play);
+void Fishing_Reset(void);
 
 typedef struct {
     /* 0x00 */ u8 unk_00;
@@ -132,7 +133,7 @@ const ActorInit Fishing_InitVars = {
     (ActorFunc)Fishing_Destroy,
     (ActorFunc)Fishing_UpdateFish,
     (ActorFunc)Fishing_DrawFish,
-    NULL,
+    (ActorResetFunc)Fishing_Reset,
 };
 
 static f32 D_80B7A650 = 0.0f;
@@ -2900,24 +2901,24 @@ f32 Fishing_GetMinimumRequiredScore() {
     // RANDOTODO: update the enhancement sliders to not allow
     // values above rando fish weight values when rando'd
     if(sLinkAge == 1) {
-        weight = CVar_GetS32("gCustomizeFishing", 0) ? CVar_GetS32("gChildMinimumWeightFish", 10) : 10;
+        weight = CVarGetInteger("gCustomizeFishing", 0) ? CVarGetInteger("gChildMinimumWeightFish", 10) : 10;
     } else {
-        weight = CVar_GetS32("gCustomizeFishing", 0) ? CVar_GetS32("gAdultMinimumWeightFish", 13) : 13;     
+        weight = CVarGetInteger("gCustomizeFishing", 0) ? CVarGetInteger("gAdultMinimumWeightFish", 13) : 13;     
     }
 
     return sqrt(((f32)weight - 0.5f) / 0.0036f);
 }
 
 bool getInstantFish() {
-    return CVar_GetS32("gCustomizeFishing", 0) && CVar_GetS32("gInstantFishing", 0);
+    return CVarGetInteger("gCustomizeFishing", 0) && CVarGetInteger("gInstantFishing", 0);
 }
 
 bool getGuaranteeBite() {
-    return CVar_GetS32("gCustomizeFishing", 0) && CVar_GetS32("gGuaranteeFishingBite", 0);
+    return CVarGetInteger("gCustomizeFishing", 0) && CVarGetInteger("gGuaranteeFishingBite", 0);
 }
 
 bool getFishNeverEscape() {
-    return CVar_GetS32("gCustomizeFishing", 0) && CVar_GetS32("gFishNeverEscape", 0);
+    return CVarGetInteger("gCustomizeFishing", 0) && CVarGetInteger("gFishNeverEscape", 0);
 }
 
 void Fishing_UpdateFish(Actor* thisx, PlayState* play2) {
@@ -5887,4 +5888,11 @@ void Fishing_DrawOwner(Actor* thisx, PlayState* play) {
     }
 
     CLOSE_DISPS(play->state.gfxCtx);
+}
+
+void Fishing_Reset(void) {
+    // Reset static variables for fishing camera and cinematic state to prevent crashing when dying
+    // or re-entering the scene while the fishing rod was cast
+    sCameraId = 0;
+    D_80B7A6CC = 0;
 }

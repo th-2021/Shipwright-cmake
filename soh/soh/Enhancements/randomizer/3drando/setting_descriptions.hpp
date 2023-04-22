@@ -40,6 +40,7 @@ extern string_view bridgeMedallions;
 extern string_view bridgeRewards;
 extern string_view bridgeDungeons;
 extern string_view bridgeTokens;
+extern string_view bridgeGreg;
 
 extern string_view bridgeStoneCountDesc;
 extern string_view bridgeMedallionCountDesc;
@@ -56,6 +57,8 @@ extern string_view ageDesc;
 extern string_view shuffleEntrancesDesc;
 
 extern string_view dungeonEntrancesDesc;
+
+extern string_view bossEntrancesDesc;
 
 extern string_view overworldEntrancesDesc;
 
@@ -115,6 +118,13 @@ extern string_view shopsThree;
 extern string_view shopsFour;
 extern string_view shopsRandom;
 
+extern string_view shopPriceBalanced;
+extern string_view shopPriceStarter;
+extern string_view shopPriceAdult;
+extern string_view shopPriceGiant;
+extern string_view shopPriceTycoon;
+extern string_view shopPriceAffordable;   
+
 extern string_view tokensOff;
 extern string_view tokensDungeon;
 extern string_view tokensOverworld;
@@ -145,6 +155,8 @@ extern string_view frogSongRupeesDesc;
 extern string_view adultTradeDesc;
 
 extern string_view chestMinigameDesc;
+
+extern string_view shuffle100GsDesc;
 
 extern string_view mapCompassStartWith;
 extern string_view mapCompassVanilla;
@@ -181,6 +193,7 @@ extern string_view ganonKeyAnyDungeon;
 extern string_view ganonKeyOverworld;
 extern string_view ganonKeyAnywhere;
 extern string_view ganonKeyLACS;
+extern string_view ganonKey100GS;
 
 extern string_view lacsMedallionCountDesc;
 extern string_view lacsStoneCountDesc;
@@ -418,6 +431,7 @@ extern string_view LogicShadowFireArrowEntryDesc;
 extern string_view LogicShadowUmbrellaDesc;
 extern string_view LogicShadowFreestandingKeyDesc;
 extern string_view LogicShadowStatueDesc;
+extern string_view LogicShadowBongoDesc;
 extern string_view LogicChildDeadhandDesc;
 extern string_view LogicGtgWithoutHookshotDesc;
 extern string_view LogicGtgFakeWallDesc;

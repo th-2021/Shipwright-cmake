@@ -568,6 +568,8 @@ void DoorWarp1_ChildWarpOut(DoorWarp1* this, PlayState* play) {
                 if (gSaveContext.n64ddFlag) {
                     play->nextEntranceIndex = 0x0457;
                     gSaveContext.nextCutsceneIndex = 0;
+                    // Skip Mido complaining about dead Deku tree
+                    Flags_SetEventChkInf(EVENTCHKINF_SPOKE_TO_MIDO_AFTER_DEKU_TREES_DEATH);
                 } else {
                     Item_Give(play, ITEM_KOKIRI_EMERALD);
                     play->nextEntranceIndex = 0xEE;
@@ -582,7 +584,8 @@ void DoorWarp1_ChildWarpOut(DoorWarp1* this, PlayState* play) {
             gSaveContext.nextCutsceneIndex = 0;
         }
 
-        if (gSaveContext.n64ddFlag && Randomizer_GetSettingValue(RSK_SHUFFLE_DUNGEON_ENTRANCES)) {
+        if (gSaveContext.n64ddFlag && (Randomizer_GetSettingValue(RSK_SHUFFLE_DUNGEON_ENTRANCES) != RO_DUNGEON_ENTRANCE_SHUFFLE_OFF ||
+            Randomizer_GetSettingValue(RSK_SHUFFLE_BOSS_ENTRANCES) != RO_BOSS_ROOM_ENTRANCE_SHUFFLE_OFF)) {
             Entrance_OverrideBlueWarp();
         }
 
@@ -688,7 +691,8 @@ void DoorWarp1_RutoWarpOut(DoorWarp1* this, PlayState* play) {
             gSaveContext.nextCutsceneIndex = 0xFFF0;
         }
 
-        if (gSaveContext.n64ddFlag && Randomizer_GetSettingValue(RSK_SHUFFLE_DUNGEON_ENTRANCES)) {
+        if (gSaveContext.n64ddFlag && (Randomizer_GetSettingValue(RSK_SHUFFLE_DUNGEON_ENTRANCES) != RO_DUNGEON_ENTRANCE_SHUFFLE_OFF ||
+            Randomizer_GetSettingValue(RSK_SHUFFLE_BOSS_ENTRANCES) != RO_BOSS_ROOM_ENTRANCE_SHUFFLE_OFF)) {
             Entrance_OverrideBlueWarp();
         }
 
@@ -903,7 +907,8 @@ void DoorWarp1_AdultWarpOut(DoorWarp1* this, PlayState* play) {
             }
         }
 
-        if (gSaveContext.n64ddFlag && Randomizer_GetSettingValue(RSK_SHUFFLE_DUNGEON_ENTRANCES)) {
+        if (gSaveContext.n64ddFlag && (Randomizer_GetSettingValue(RSK_SHUFFLE_DUNGEON_ENTRANCES) != RO_DUNGEON_ENTRANCE_SHUFFLE_OFF ||
+            Randomizer_GetSettingValue(RSK_SHUFFLE_BOSS_ENTRANCES) != RO_BOSS_ROOM_ENTRANCE_SHUFFLE_OFF)) {
             Entrance_OverrideBlueWarp();
         }
 

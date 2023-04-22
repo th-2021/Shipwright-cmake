@@ -157,8 +157,8 @@ void EnSyatekiMan_Init(Actor* thisx, PlayState* play) {
 
     if (gSaveContext.n64ddFlag && Randomizer_GetSettingValue(RSK_SHUFFLE_INTERIOR_ENTRANCES)) {
         // If child is in the adult shooting gallery or adult in the child shooting gallery, then despawn the shooting gallery man
-        if ((LINK_IS_CHILD && Entrance_SceneAndSpawnAre(0x42, 0x00)) || //Kakariko Village -> Adult Shooting Gallery, index 003B in the entrance table
-            (LINK_IS_ADULT && Entrance_SceneAndSpawnAre(0x42, 0x01))) { //Market -> Child Shooting Gallery,           index 016D in the entrance table
+        if ((LINK_IS_CHILD && Entrance_SceneAndSpawnAre(SCENE_SYATEKIJYOU, 0x00)) || //Kakariko Village -> Adult Shooting Gallery, index 003B in the entrance table
+            (LINK_IS_ADULT && Entrance_SceneAndSpawnAre(SCENE_SYATEKIJYOU, 0x01))) { //Market -> Child Shooting Gallery,           index 016D in the entrance table
             Actor_Kill(thisx);
             return;
         }
@@ -289,7 +289,7 @@ void EnSyatekiMan_StartGame(EnSyatekiMan* this, PlayState* play) {
         Message_CloseTextbox(play);
         gallery = ((EnSyatekiItm*)this->actor.parent);
         if (gallery->actor.update != NULL) {
-            if(CVar_GetS32("gCustomizeShootingGallery", 0) && CVar_GetS32("gInstantShootingGalleryWin", 0)) {
+            if(CVarGetInteger("gCustomizeShootingGallery", 0) && CVarGetInteger("gInstantShootingGalleryWin", 0)) {
                 gallery->hitCount = 10;
                 gallery->signal = ENSYATEKI_END;
             } else {
@@ -401,8 +401,8 @@ void EnSyatekiMan_EndGame(EnSyatekiMan* this, PlayState* play) {
                 case SYATEKI_RESULT_ALMOST:
                     this->timer = 20;
                     s32 ammunition = 15;
-                    if(CVar_GetS32("gCustomizeShootingGallery", 0)) {
-                        ammunition = CVar_GetS32(LINK_IS_ADULT ? "gAdultShootingGalleryAmmunition" : "gChildShootingGalleryAmmunition", 15);
+                    if(CVarGetInteger("gCustomizeShootingGallery", 0)) {
+                        ammunition = CVarGetInteger(LINK_IS_ADULT ? "gAdultShootingGalleryAmmunition" : "gChildShootingGalleryAmmunition", 15);
                     }
                     func_8008EF44(play, ammunition);
                     this->actionFunc = EnSyatekiMan_RestartGame;

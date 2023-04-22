@@ -332,7 +332,7 @@ void func_80A56B40(EnHeishi4* this, PlayState* play) {
             return;
         }
         if (this->type == HEISHI4_AT_MARKET_NIGHT) {
-            if (CVar_GetS32("gMarketSneak", 0)) {
+            if (CVarGetInteger("gMarketSneak", 0)) {
                 this->actionFunc = EnHeishi4_MarketSneak;
             } else {
                 this->actionFunc = func_80A56614;
@@ -350,10 +350,10 @@ void EnHeishi4_MarketSneak(EnHeishi4* this, PlayState* play) {
     if (Message_GetState(&play->msgCtx) == TEXT_STATE_CHOICE && Message_ShouldAdvance(play)) {
         switch (play->msgCtx.choiceIndex) {
             case 0: //yes
-                if (gSaveContext.n64ddFlag){
-                    play->nextEntranceIndex = Entrance_OverrideNextIndex(0xCD);
+                if (gSaveContext.n64ddFlag && Randomizer_GetSettingValue(RSK_SHUFFLE_OVERWORLD_ENTRANCES) != RO_GENERIC_OFF){
+                    play->nextEntranceIndex = Entrance_OverrideNextIndex(0x01FD); // Market Entrance -> HF
                 } else {
-                    play->nextEntranceIndex = 0xCD;
+                    play->nextEntranceIndex = 0x00CD; // HF Near bridge (OoT cutscene entrance) to not fall in the water
                 } 
                 play->sceneLoadFlag = 0x14;
                 play->fadeTransition = 0x2E;
@@ -377,13 +377,13 @@ void EnHeishi4_Update(Actor* thisx, PlayState* play) {
     thisx->world.pos.z = this->pos.z;
     Actor_SetFocus(thisx, this->height);
     if (this->type != HEISHI4_AT_MARKET_DYING) {
-        this->unk_28C.unk_18 = player->actor.world.pos;
+        this->interactInfo.trackPos = player->actor.world.pos;
         if (!LINK_IS_ADULT) {
-            this->unk_28C.unk_18.y = (player->actor.world.pos.y - 10.0f);
+            this->interactInfo.trackPos.y = player->actor.world.pos.y - 10.0f;
         }
-        func_80034A14(thisx, &this->unk_28C, 2, 4);
-        this->unk_260 = this->unk_28C.unk_08;
-        this->unk_266 = this->unk_28C.unk_0E;
+        Npc_TrackPoint(thisx, &this->interactInfo, 2, NPC_TRACKING_FULL_BODY);
+        this->unk_260 = this->interactInfo.headRot;
+        this->unk_266 = this->interactInfo.torsoRot;
     }
     this->unk_27E += 1;
     this->actionFunc(this, play);

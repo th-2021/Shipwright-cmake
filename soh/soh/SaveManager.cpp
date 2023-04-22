@@ -1,11 +1,13 @@
 #include "SaveManager.h"
 #include "OTRGlobals.h"
+#include "Enhancements/game-interactor/GameInteractor.h"
 
 #include "z64.h"
 #include "functions.h"
 #include "macros.h"
+#include <variables.h>
 #include <Hooks.h>
-#include <Cvar.h>
+#include <libultraship/bridge.h>
 
 #define NOGDI // avoid various windows defines that conflict with things in z64.h
 #include <spdlog/spdlog.h>
@@ -51,6 +53,11 @@ SaveManager::SaveManager() {
         info.randoSave = 0;
         info.requiresMasterQuest = 0;
         info.requiresOriginal = 0;
+
+        info.buildVersionMajor = 0;
+        info.buildVersionMinor = 0;
+        info.buildVersionPatch = 0;
+        memset(&info.buildVersion, 0, sizeof(info.buildVersion));
     }
 }
 
@@ -176,6 +183,12 @@ void SaveManager::LoadRandomizerVersion2() {
     std::string ganonText;
     SaveManager::Instance->LoadData("ganonText", ganonText);
     memcpy(gSaveContext.ganonText, ganonText.c_str(), ganonText.length());
+    std::string dampeText;
+    SaveManager::Instance->LoadData("dampeText", dampeText);
+    memcpy(gSaveContext.dampeText, dampeText.c_str(), dampeText.length());
+    std::string gregHintText;
+    SaveManager::Instance->LoadData("gregHintText", gregHintText);
+    memcpy(gSaveContext.gregHintText, gregHintText.c_str(), gregHintText.length());
     std::string warpMinuetText;
     SaveManager::Instance->LoadData("warpMinuetText", warpMinuetText);
     memcpy(gSaveContext.warpMinuetText, warpMinuetText.c_str(), warpMinuetText.length());
@@ -200,6 +213,8 @@ void SaveManager::LoadRandomizerVersion2() {
     SaveManager::Instance->LoadData("pendingIceTrapCount", gSaveContext.pendingIceTrapCount);
 
     std::shared_ptr<Randomizer> randomizer = OTRGlobals::Instance->gRandomizer;
+
+    randomizer->LoadRandomizerSettings("");
 
     size_t merchantPricesSize = 0;
     SaveManager::Instance->LoadData("merchantPricesSize", merchantPricesSize);
@@ -265,6 +280,8 @@ void SaveManager::SaveRandomizer() {
     SaveManager::Instance->SaveData("adultAltarText", gSaveContext.adultAltarText);
     SaveManager::Instance->SaveData("ganonHintText", gSaveContext.ganonHintText);
     SaveManager::Instance->SaveData("ganonText", gSaveContext.ganonText);
+    SaveManager::Instance->SaveData("dampeText", gSaveContext.dampeText);
+    SaveManager::Instance->SaveData("gregHintText", gSaveContext.gregHintText);
     SaveManager::Instance->SaveData("warpMinuetText", gSaveContext.warpMinuetText);
     SaveManager::Instance->SaveData("warpBoleroText", gSaveContext.warpBoleroText);
     SaveManager::Instance->SaveData("warpSerenadeText", gSaveContext.warpSerenadeText);
@@ -378,6 +395,12 @@ void SaveManager::InitMeta(int fileNum) {
     // If the file is not marked as Master Quest, it could still theoretically be a rando save with all 12 MQ dungeons, in which case
     // we don't actually require a vanilla OTR.
     fileMetaInfo[fileNum].requiresOriginal = !gSaveContext.isMasterQuest && (!gSaveContext.n64ddFlag || gSaveContext.mqDungeonCount < 12);
+
+    fileMetaInfo[fileNum].buildVersionMajor = gSaveContext.sohStats.buildVersionMajor;
+    fileMetaInfo[fileNum].buildVersionMinor = gSaveContext.sohStats.buildVersionMinor;
+    fileMetaInfo[fileNum].buildVersionPatch = gSaveContext.sohStats.buildVersionPatch;
+    strncpy(fileMetaInfo[fileNum].buildVersion, gSaveContext.sohStats.buildVersion, sizeof(fileMetaInfo[fileNum].buildVersion) - 1);
+    fileMetaInfo[fileNum].buildVersion[sizeof(fileMetaInfo[fileNum].buildVersion) - 1] = 0;
 }
 
 void SaveManager::InitFile(bool isDebug) {
@@ -479,6 +502,9 @@ void SaveManager::InitFileNormal() {
     for (int entrancesIdx = 0; entrancesIdx < ARRAY_COUNT(gSaveContext.sohStats.entrancesDiscovered); entrancesIdx++) {
         gSaveContext.sohStats.entrancesDiscovered[entrancesIdx] = 0;
     }
+    for (int rc = 0; rc < ARRAY_COUNT(gSaveContext.sohStats.locationsSkipped); rc++) {
+        gSaveContext.sohStats.locationsSkipped[rc] = 0;
+    }
     for (int scene = 0; scene < ARRAY_COUNT(gSaveContext.sceneFlags); scene++) {
         gSaveContext.sceneFlags[scene].chest = 0;
         gSaveContext.sceneFlags[scene].swch = 0;
@@ -498,6 +524,7 @@ void SaveManager::InitFileNormal() {
     gSaveContext.fw.set = 0;
     gSaveContext.fw.tempSwchFlags = 0;
     gSaveContext.fw.tempCollectFlags = 0;
+    gSaveContext.backupFW = gSaveContext.fw;
     for (int flag = 0; flag < ARRAY_COUNT(gSaveContext.gsFlags); flag++) {
         gSaveContext.gsFlags[flag] = 0;
     }
@@ -544,6 +571,13 @@ void SaveManager::InitFileNormal() {
     gSaveContext.infTable[29] = 1;
     gSaveContext.sceneFlags[5].swch = 0x40000000;
     gSaveContext.pendingSale = ITEM_NONE;
+
+    strncpy(gSaveContext.sohStats.buildVersion, (const char*) gBuildVersion, sizeof(gSaveContext.sohStats.buildVersion) - 1);
+    gSaveContext.sohStats.buildVersion[sizeof(gSaveContext.sohStats.buildVersion) - 1] = 0;
+    gSaveContext.sohStats.buildVersionMajor = gBuildVersionMajor;
+    gSaveContext.sohStats.buildVersionMinor = gBuildVersionMinor;
+    gSaveContext.sohStats.buildVersionPatch = gBuildVersionPatch;
+
     //RANDOTODO (ADD ITEMLOCATIONS TO GSAVECONTEXT)
 }
 
@@ -685,6 +719,7 @@ void SaveManager::SaveFile(int fileNum) {
 #endif
 
     InitMeta(fileNum);
+    GameInteractor::Instance->ExecuteHooks<GameInteractor::OnSaveFile>(fileNum);
 }
 
 void SaveManager::SaveGlobal() {
@@ -746,6 +781,7 @@ void SaveManager::LoadFile(int fileNum) {
             break;
     }
     InitMeta(fileNum);
+    GameInteractor::Instance->ExecuteHooks<GameInteractor::OnLoadFile>(fileNum);
 }
 
 bool SaveManager::SaveFile_Exist(int fileNum) {
@@ -801,7 +837,7 @@ void SaveManager::AddPostFunction(const std::string& name, PostFunc func) {
 void SaveManager::CreateDefaultGlobal() {
     gSaveContext.audioSetting = 0;
     gSaveContext.zTargetSetting = 0;
-    gSaveContext.language = CVar_GetS32("gLanguages", LANGUAGE_ENG);
+    gSaveContext.language = CVarGetInteger("gLanguages", LANGUAGE_ENG);
 
     SaveGlobal();
 }
@@ -1231,6 +1267,14 @@ void SaveManager::LoadBaseVersion3() {
         SaveManager::Instance->LoadData("gsTokens", gSaveContext.inventory.gsTokens);
     });
     SaveManager::Instance->LoadStruct("sohStats", []() {
+        std::string buildVersion;
+        SaveManager::Instance->LoadData("buildVersion", buildVersion);
+        strncpy(gSaveContext.sohStats.buildVersion, buildVersion.c_str(), ARRAY_COUNT(gSaveContext.sohStats.buildVersion) - 1);
+        gSaveContext.sohStats.buildVersion[ARRAY_COUNT(gSaveContext.sohStats.buildVersion) - 1] = 0;
+        SaveManager::Instance->LoadData("buildVersionMajor", gSaveContext.sohStats.buildVersionMajor);
+        SaveManager::Instance->LoadData("buildVersionMinor", gSaveContext.sohStats.buildVersionMinor);
+        SaveManager::Instance->LoadData("buildVersionPatch", gSaveContext.sohStats.buildVersionPatch);
+
         SaveManager::Instance->LoadData("heartPieces", gSaveContext.sohStats.heartPieces);
         SaveManager::Instance->LoadData("heartContainers", gSaveContext.sohStats.heartContainers);
         SaveManager::Instance->LoadArray("dungeonKeys", ARRAY_COUNT(gSaveContext.sohStats.dungeonKeys), [](size_t i) {
@@ -1249,6 +1293,9 @@ void SaveManager::LoadBaseVersion3() {
         });
         SaveManager::Instance->LoadArray("entrancesDiscovered", ARRAY_COUNT(gSaveContext.sohStats.entrancesDiscovered), [](size_t i) {
             SaveManager::Instance->LoadData("", gSaveContext.sohStats.entrancesDiscovered[i]);
+        });
+        SaveManager::Instance->LoadArray("locationsSkipped", ARRAY_COUNT(gSaveContext.sohStats.locationsSkipped), [](size_t i) {
+            SaveManager::Instance->LoadData("", gSaveContext.sohStats.locationsSkipped[i]);
         });
     });
     SaveManager::Instance->LoadArray("sceneFlags", ARRAY_COUNT(gSaveContext.sceneFlags), [](size_t i) {
@@ -1330,6 +1377,21 @@ void SaveManager::LoadBaseVersion3() {
         SaveManager::Instance->LoadData("", gSaveContext.randomizerInf[i]);
     });
     SaveManager::Instance->LoadData("isMasterQuest", gSaveContext.isMasterQuest);
+    SaveManager::Instance->LoadStruct("backupFW", []() {
+        SaveManager::Instance->LoadStruct("pos", []() {
+            SaveManager::Instance->LoadData("x", gSaveContext.backupFW.pos.x);
+            SaveManager::Instance->LoadData("y", gSaveContext.backupFW.pos.y);
+            SaveManager::Instance->LoadData("z", gSaveContext.backupFW.pos.z);
+        });
+        SaveManager::Instance->LoadData("yaw", gSaveContext.backupFW.yaw);
+        SaveManager::Instance->LoadData("playerParams", gSaveContext.backupFW.playerParams);
+        SaveManager::Instance->LoadData("entranceIndex", gSaveContext.backupFW.entranceIndex);
+        SaveManager::Instance->LoadData("roomIndex", gSaveContext.backupFW.roomIndex);
+        SaveManager::Instance->LoadData("set", gSaveContext.backupFW.set);
+        SaveManager::Instance->LoadData("tempSwchFlags", gSaveContext.backupFW.tempSwchFlags);
+        SaveManager::Instance->LoadData("tempCollectFlags", gSaveContext.backupFW.tempCollectFlags);
+    });
+    SaveManager::Instance->LoadData("dogParams", gSaveContext.dogParams);
 }
 
 void SaveManager::SaveBase() {
@@ -1406,6 +1468,11 @@ void SaveManager::SaveBase() {
         SaveManager::Instance->SaveData("gsTokens", gSaveContext.inventory.gsTokens);
     });
     SaveManager::Instance->SaveStruct("sohStats", []() {
+        SaveManager::Instance->SaveData("buildVersion", gSaveContext.sohStats.buildVersion);
+        SaveManager::Instance->SaveData("buildVersionMajor", gSaveContext.sohStats.buildVersionMajor);
+        SaveManager::Instance->SaveData("buildVersionMinor", gSaveContext.sohStats.buildVersionMinor);
+        SaveManager::Instance->SaveData("buildVersionPatch", gSaveContext.sohStats.buildVersionPatch);
+
         SaveManager::Instance->SaveData("heartPieces", gSaveContext.sohStats.heartPieces);
         SaveManager::Instance->SaveData("heartContainers", gSaveContext.sohStats.heartContainers);
         SaveManager::Instance->SaveArray("dungeonKeys", ARRAY_COUNT(gSaveContext.sohStats.dungeonKeys), [](size_t i) {
@@ -1424,6 +1491,9 @@ void SaveManager::SaveBase() {
         });
         SaveManager::Instance->SaveArray("entrancesDiscovered", ARRAY_COUNT(gSaveContext.sohStats.entrancesDiscovered), [](size_t i) {
             SaveManager::Instance->SaveData("", gSaveContext.sohStats.entrancesDiscovered[i]);
+        });
+        SaveManager::Instance->SaveArray("locationsSkipped", ARRAY_COUNT(gSaveContext.sohStats.locationsSkipped), [](size_t i) {
+            SaveManager::Instance->SaveData("", gSaveContext.sohStats.locationsSkipped[i]);
         });
     });
     SaveManager::Instance->SaveArray("sceneFlags", ARRAY_COUNT(gSaveContext.sceneFlags), [](size_t i) {
@@ -1505,6 +1575,21 @@ void SaveManager::SaveBase() {
         SaveManager::Instance->SaveData("", gSaveContext.randomizerInf[i]);
     });
     SaveManager::Instance->SaveData("isMasterQuest", gSaveContext.isMasterQuest);
+    SaveManager::Instance->SaveStruct("backupFW", []() {
+        SaveManager::Instance->SaveStruct("pos", []() {
+            SaveManager::Instance->SaveData("x", gSaveContext.backupFW.pos.x);
+            SaveManager::Instance->SaveData("y", gSaveContext.backupFW.pos.y);
+            SaveManager::Instance->SaveData("z", gSaveContext.backupFW.pos.z);
+        });
+        SaveManager::Instance->SaveData("yaw", gSaveContext.backupFW.yaw);
+        SaveManager::Instance->SaveData("playerParams", gSaveContext.backupFW.playerParams);
+        SaveManager::Instance->SaveData("entranceIndex", gSaveContext.backupFW.entranceIndex);
+        SaveManager::Instance->SaveData("roomIndex", gSaveContext.backupFW.roomIndex);
+        SaveManager::Instance->SaveData("set", gSaveContext.backupFW.set);
+        SaveManager::Instance->SaveData("tempSwchFlags", gSaveContext.backupFW.tempSwchFlags);
+        SaveManager::Instance->SaveData("tempCollectFlags", gSaveContext.backupFW.tempCollectFlags);
+    });
+    SaveManager::Instance->SaveData("dogParams", gSaveContext.dogParams);
 }
 
 void SaveManager::SaveArray(const std::string& name, const size_t size, SaveArrayFunc func) {
@@ -1628,6 +1713,11 @@ void SaveManager::CopyZeldaFile(int from, int to) {
     fileMetaInfo[to].randoSave = fileMetaInfo[from].randoSave;
     fileMetaInfo[to].requiresMasterQuest = fileMetaInfo[from].requiresMasterQuest;
     fileMetaInfo[to].requiresOriginal = fileMetaInfo[from].requiresOriginal;
+    fileMetaInfo[to].buildVersionMajor = fileMetaInfo[from].buildVersionMajor;
+    fileMetaInfo[to].buildVersionMinor = fileMetaInfo[from].buildVersionMinor;
+    fileMetaInfo[to].buildVersionPatch = fileMetaInfo[from].buildVersionPatch;
+    strncpy(fileMetaInfo[to].buildVersion, fileMetaInfo[from].buildVersion, sizeof(fileMetaInfo[to].buildVersion) - 1);
+    fileMetaInfo[to].buildVersion[sizeof(fileMetaInfo[to].buildVersion) - 1] = 0;
 }
 
 void SaveManager::DeleteZeldaFile(int fileNum) {
@@ -1636,6 +1726,9 @@ void SaveManager::DeleteZeldaFile(int fileNum) {
     }
     fileMetaInfo[fileNum].valid = false;
     fileMetaInfo[fileNum].randoSave = false;
+    fileMetaInfo[fileNum].requiresMasterQuest = false;
+    fileMetaInfo[fileNum].requiresOriginal = false;
+    GameInteractor::Instance->ExecuteHooks<GameInteractor::OnDeleteFile>(fileNum);
 }
 
 bool SaveManager::IsRandoFile() {
@@ -1962,7 +2055,7 @@ void SaveManager::ConvertFromUnversioned() {
     gSaveContext.zTargetSetting = data[SRAM_HEADER_ZTARGET] & 1;
     gSaveContext.language = data[SRAM_HEADER_LANGUAGE];
     if (gSaveContext.language >= LANGUAGE_MAX) {
-        gSaveContext.language = CVar_GetS32("gLanguages", LANGUAGE_ENG);
+        gSaveContext.language = CVarGetInteger("gLanguages", LANGUAGE_ENG);
     }
     SaveGlobal();
 

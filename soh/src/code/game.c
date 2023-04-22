@@ -1,6 +1,7 @@
 #include <string.h>
 #include "global.h"
 #include "vt.h"
+#include "soh/Enhancements/game-interactor/GameInteractor.h"
 
 SpeedMeter D_801664D0;
 struct_801664F0 D_801664F0;
@@ -9,10 +10,6 @@ VisMono sMonoColors;
 ViMode sViMode;
 FaultClient sGameFaultClient;
 u16 sLastButtonPressed;
-int32_t warpTime = 0;
-bool warped = false;
-Vec3f playerPos;
-int16_t playerYaw;
 
 // Forward declared, because this in a C++ header.
 int gfx_create_framebuffer(uint32_t width, uint32_t height);
@@ -161,7 +158,7 @@ void GameState_Draw(GameState* gameState, GraphicsContext* gfxCtx) {
     }
 
     sLastButtonPressed = gameState->input[0].press.button | gameState->input[0].cur.button;
-    if (R_DISABLE_INPUT_DISPLAY == 0 && CVar_GetS32("gDebugEnabled", 0)) {
+    if (R_DISABLE_INPUT_DISPLAY == 0 && CVarGetInteger("gDebugEnabled", 0)) {
         GameState_DrawInputDisplay(sLastButtonPressed, &newDList);
     }
 
@@ -328,138 +325,9 @@ void GameState_Update(GameState* gameState) {
         func_800C49F4(gfxCtx);
     }
 
-    // -----------------------
-    // Cheats hooks
-    // -----------------------
+    gSaveContext.language = CVarGetInteger("gLanguages", LANGUAGE_ENG);
 
-    // Inf Money
-    if (CVar_GetS32("gInfiniteMoney", 0) != 0) {
-        if (gSaveContext.rupees < CUR_CAPACITY(UPG_WALLET)) {
-            gSaveContext.rupees = CUR_CAPACITY(UPG_WALLET);
-        }
-    }
-
-    // Inf Health
-    if (CVar_GetS32("gInfiniteHealth", 0) != 0) {
-        if (gSaveContext.health < gSaveContext.healthCapacity) {
-            gSaveContext.health = gSaveContext.healthCapacity;
-        }
-    }
-
-    // Inf Ammo
-    if (CVar_GetS32("gInfiniteAmmo", 0) != 0) {
-        // Deku Sticks
-        if (AMMO(ITEM_STICK) < CUR_CAPACITY(UPG_STICKS)) {
-            AMMO(ITEM_STICK) = CUR_CAPACITY(UPG_STICKS);
-        }
-
-        // Deku Nuts
-        if (AMMO(ITEM_NUT) < CUR_CAPACITY(UPG_NUTS)) {
-            AMMO(ITEM_NUT) = CUR_CAPACITY(UPG_NUTS);
-        }
-
-        // Bombs
-        if (AMMO(ITEM_BOMB) < CUR_CAPACITY(UPG_BOMB_BAG)) {
-            AMMO(ITEM_BOMB) = CUR_CAPACITY(UPG_BOMB_BAG);
-        }
-
-        // Fairy Bow (Ammo)
-        if (AMMO(ITEM_BOW) < CUR_CAPACITY(UPG_QUIVER)) {
-            AMMO(ITEM_BOW) = CUR_CAPACITY(UPG_QUIVER);
-        }
-
-        // Fairy Slingshot (Ammo)
-        if (AMMO(ITEM_SLINGSHOT) < CUR_CAPACITY(UPG_BULLET_BAG)) {
-            AMMO(ITEM_SLINGSHOT) = CUR_CAPACITY(UPG_BULLET_BAG);
-        }
-
-        // Bombchus (max: 50, no upgrades)
-        if (INV_CONTENT(ITEM_BOMBCHU) == ITEM_BOMBCHU && AMMO(ITEM_BOMBCHU) < 50) {
-            AMMO(ITEM_BOMBCHU) = 50;
-        }
-    }
-
-    // Inf Magic
-    if (CVar_GetS32("gInfiniteMagic", 0) != 0) {
-        if (gSaveContext.isMagicAcquired && gSaveContext.magic != (gSaveContext.isDoubleMagicAcquired + 1) * 0x30) {
-            gSaveContext.magic = (gSaveContext.isDoubleMagicAcquired + 1) * 0x30;
-        }
-    }
-
-    // Inf Nayru's Love Timer
-    if (CVar_GetS32("gInfiniteNayru", 0) != 0) {
-        gSaveContext.nayrusLoveTimer = 0x44B;
-    }
-
-    // Moon Jump On L
-    if (CVar_GetS32("gMoonJumpOnL", 0) != 0) {
-        if (gPlayState) {
-            Player* player = GET_PLAYER(gPlayState);
-
-            if (CHECK_BTN_ANY(gPlayState->state.input[0].cur.button, BTN_L)) {
-                player->actor.velocity.y = 6.34375f;
-            }
-        }
-    }
-
-    // Permanent infinite sword glitch (ISG)
-    if (CVar_GetS32("gEzISG", 0) != 0) {
-        if (gPlayState) {
-            Player* player = GET_PLAYER(gPlayState);
-            player->swordState = 1;
-        }
-    }
-
-    // Unrestricted Items
-    if (CVar_GetS32("gNoRestrictItems", 0) != 0) {
-        if (gPlayState) {
-            u8 sunsBackup = gPlayState->interfaceCtx.restrictions.sunsSong;
-            memset(&gPlayState->interfaceCtx.restrictions, 0, sizeof(gPlayState->interfaceCtx.restrictions));
-            gPlayState->interfaceCtx.restrictions.sunsSong = sunsBackup;
-        }
-    }
-
-    // Freeze Time
-    if (CVar_GetS32("gFreezeTime", 0) != 0) {
-        if (CVar_GetS32("gPrevTime", -1) == -1) {
-            CVar_SetS32("gPrevTime", gSaveContext.dayTime);
-        }
-
-        int32_t prevTime = CVar_GetS32("gPrevTime", gSaveContext.dayTime);
-        gSaveContext.dayTime = prevTime;
-    } else {
-        CVar_SetS32("gPrevTime", -1);
-    }
-    
-    //Switches Link's age and respawns him at the last entrance he entered.
-    if (CVar_GetS32("gSwitchAge", 0) != 0) {
-        CVar_SetS32("gSwitchAge", 0);
-        if (gPlayState) {
-            playerPos = GET_PLAYER(gPlayState)->actor.world.pos;
-            playerYaw = GET_PLAYER(gPlayState)->actor.shape.rot.y;
-            gPlayState->nextEntranceIndex = gSaveContext.entranceIndex;
-            gPlayState->sceneLoadFlag = 0x14;
-            gPlayState->fadeTransition = 11;
-            gSaveContext.nextTransitionType = 11;
-            warped = true;
-            if (gPlayState->linkAgeOnLoad == 1) {
-                gPlayState->linkAgeOnLoad = 0;
-            } else {
-                gPlayState->linkAgeOnLoad = 1;
-            }
-        }
-    }
-
-    if (gPlayState) {
-        if (warped && gPlayState->sceneLoadFlag != 0x0014 && gSaveContext.nextTransitionType == 255) {
-            GET_PLAYER(gPlayState)->actor.shape.rot.y = playerYaw;
-            GET_PLAYER(gPlayState)->actor.world.pos = playerPos;
-            warped = false;
-        }
-    }
-
-    gSaveContext.language = CVar_GetS32("gLanguages", LANGUAGE_ENG);
-
+    GameInteractor_ExecuteOnGameFrameUpdate();
     gameState->frames++;
 }
 

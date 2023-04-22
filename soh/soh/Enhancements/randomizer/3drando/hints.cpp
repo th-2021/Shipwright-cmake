@@ -116,6 +116,8 @@ Text childAltarText;
 Text adultAltarText;
 Text ganonText;
 Text ganonHintText;
+Text dampesText;
+Text gregText;
 Text warpMinuetText;
 Text warpBoleroText;
 Text warpSerenadeText;
@@ -137,6 +139,14 @@ Text& GetGanonText() {
 
 Text& GetGanonHintText() {
   return ganonHintText;
+}
+
+Text& GetDampeHintText() {
+  return dampesText;
+}
+
+Text& GetGregHintText() {
+  return gregText;
 }
 
 Text& GetWarpMinuetText() {
@@ -312,17 +322,12 @@ static void CreateWothHint(uint8_t* remainingDungeonWothHints) {
     Location(hintedLocation)->SetAsHinted();
     uint32_t gossipStone = RandomElement(gossipStoneLocations);
 
-    // form hint text
-    Text locationText;
     if (Location(hintedLocation)->IsDungeon()) {
         *remainingDungeonWothHints -= 1;
-        uint32_t parentRegion = Location(hintedLocation)->GetParentRegionKey();
-        locationText = AreaTable(parentRegion)->GetHint().GetText();
-
-    } else {
-        uint32_t parentRegion = Location(hintedLocation)->GetParentRegionKey();
-        locationText = GetHintRegion(parentRegion)->GetHint().GetText();
     }
+
+    // form hint text
+    Text locationText = GetHintRegion(Location(hintedLocation)->GetParentRegionKey())->GetHint().GetText();
     Text finalWothHint = Hint(PREFIX).GetText() + "#" + locationText + "#" + Hint(WAY_OF_THE_HERO).GetText();
     SPDLOG_DEBUG("\tMessage: ");
     SPDLOG_DEBUG(finalWothHint.english);
@@ -360,16 +365,12 @@ static void CreateBarrenHint(uint8_t* remainingDungeonBarrenHints, std::vector<u
     Location(hintedLocation)->SetAsHinted();
     uint32_t gossipStone = RandomElement(gossipStoneLocations);
 
-    // form hint text
-    Text locationText;
     if (Location(hintedLocation)->IsDungeon()) {
         *remainingDungeonBarrenHints -= 1;
-        uint32_t parentRegion = Location(hintedLocation)->GetParentRegionKey();
-        locationText = Hint(AreaTable(parentRegion)->hintKey).GetText();
-    } else {
-        uint32_t parentRegion = Location(hintedLocation)->GetParentRegionKey();
-        locationText = Hint(GetHintRegion(parentRegion)->hintKey).GetText();
     }
+
+    // form hint text
+    Text locationText = GetHintRegion(Location(hintedLocation)->GetParentRegionKey())->GetHint().GetText();
     Text finalBarrenHint =
         Hint(PREFIX).GetText() + Hint(PLUNDERING).GetText() + "#" + locationText + "#" + Hint(FOOLISH).GetText();
     SPDLOG_DEBUG("\tMessage: ");
@@ -414,16 +415,15 @@ static void CreateRandomLocationHint(const bool goodItem = false) {
 
   //form hint text
   Text itemText = Location(hintedLocation)->GetPlacedItem().GetHint().GetText();
+  Text locationText = GetHintRegion(Location(hintedLocation)->GetParentRegionKey())->GetHint().GetText();
+  // RANDOTODO: reconsider dungeon vs non-dungeon item location hints when boss shuffle mixed pools happens
   if (Location(hintedLocation)->IsDungeon()) {
-    uint32_t parentRegion = Location(hintedLocation)->GetParentRegionKey();
-    Text locationText = AreaTable(parentRegion)->GetHint().GetText();
     Text finalHint = Hint(PREFIX).GetText()+"#"+locationText+"# "+Hint(HOARDS).GetText()+" #"+itemText+"#.";
     SPDLOG_DEBUG("\tMessage: ");
     SPDLOG_DEBUG(finalHint.english);
     SPDLOG_DEBUG("\n\n");
     AddHint(finalHint, gossipStone, {QM_GREEN, QM_RED});
   } else {
-    Text locationText = GetHintRegion(Location(hintedLocation)->GetParentRegionKey())->GetHint().GetText();
     Text finalHint = Hint(PREFIX).GetText()+"#"+itemText+"# "+Hint(CAN_BE_FOUND_AT).GetText()+" #"+locationText+"#.";
     SPDLOG_DEBUG("\tMessage: ");
     SPDLOG_DEBUG(finalHint.english);
@@ -546,7 +546,7 @@ static void CreateTrialHints() {
   }
 }
 
-static void CreateGanonText() {
+void CreateGanonText() {
 
   //funny ganon line
   ganonText = RandomElement(GetHintCategory(HintCategory::GanonLine)).GetText();
@@ -632,6 +632,9 @@ static Text BuildBridgeReqsText() {
 
   } else if (Bridge.Is(RAINBOWBRIDGE_TOKENS)) {
     bridgeText = BuildCountReq(BRIDGE_TOKENS_HINT, BridgeTokenCount);
+  
+  } else if (Bridge.Is(RAINBOWBRIDGE_GREG)) {
+    bridgeText = Hint(BRIDGE_GREG_HINT).GetText();
   }
 
   return Text()+"$l"+bridgeText+"^";
@@ -658,6 +661,9 @@ static Text BuildGanonBossKeyText() {
   } else if (GanonsBossKey.Is(GANONSBOSSKEY_ANYWHERE)) {
     ganonBossKeyText = Hint(GANON_BK_ANYWHERE_HINT).GetText();
 
+  } else if (GanonsBossKey.Is(GANONSBOSSKEY_FINAL_GS_REWARD)) {
+    ganonBossKeyText = Hint(GANON_BK_SKULLTULA_HINT).GetText();
+
   } else if (GanonsBossKey.Is(GANONSBOSSKEY_LACS_VANILLA)) {
     ganonBossKeyText = Hint(LACS_VANILLA_HINT).GetText();
 
@@ -680,37 +686,45 @@ static Text BuildGanonBossKeyText() {
   return Text()+"$b"+ganonBossKeyText+"^";
 }
 
-static void CreateAltarText() {
+void CreateAltarText() {
 
   //Child Altar Text
-  childAltarText = Hint(SPIRITUAL_STONE_TEXT_START).GetText()+"^"+
-  //Spiritual Stones
-      (StartingKokiriEmerald.Value<uint8_t>() ? Text{ "##", "##", "##" }
-                                              : BuildDungeonRewardText(KOKIRI_EMERALD)) +
-      (StartingGoronRuby.Value<uint8_t>() ? Text{ "##", "##", "##" }
-                                          : BuildDungeonRewardText(GORON_RUBY)) +
-      (StartingZoraSapphire.Value<uint8_t>() ? Text{ "##", "##", "##" }
-                                             : BuildDungeonRewardText(ZORA_SAPPHIRE)) +
-  //How to open Door of Time, the event trigger is necessary to read the altar multiple times
-  BuildDoorOfTimeText();
+  if (AltarHintText) {
+    childAltarText = Hint(SPIRITUAL_STONE_TEXT_START).GetText()+"^"+
+    //Spiritual Stones
+        (StartingKokiriEmerald.Value<uint8_t>() ? Text{ "##", "##", "##" }
+                                                : BuildDungeonRewardText(KOKIRI_EMERALD)) +
+        (StartingGoronRuby.Value<uint8_t>() ? Text{ "##", "##", "##" }
+                                            : BuildDungeonRewardText(GORON_RUBY)) +
+        (StartingZoraSapphire.Value<uint8_t>() ? Text{ "##", "##", "##" }
+                                              : BuildDungeonRewardText(ZORA_SAPPHIRE)) +
+    //How to open Door of Time, the event trigger is necessary to read the altar multiple times
+    BuildDoorOfTimeText();
+  } else {
+    childAltarText = BuildDoorOfTimeText();
+  }
+
   CreateMessageFromTextObject(0x7040, 0, 2, 3, AddColorsAndFormat(childAltarText, {QM_GREEN, QM_RED, QM_BLUE}));
 
   //Adult Altar Text
-  adultAltarText = Hint(ADULT_ALTAR_TEXT_START).GetText()+"^"+
-  //Medallion Areas
-      (StartingLightMedallion.Value<uint8_t>() ? Text{ "##", "##", "##" }
-                                               : BuildDungeonRewardText(LIGHT_MEDALLION)) +
-      (StartingForestMedallion.Value<uint8_t>() ? Text{ "##", "##", "##" }
-                                                : BuildDungeonRewardText(FOREST_MEDALLION)) +
-      (StartingFireMedallion.Value<uint8_t>() ? Text{ "##", "##", "##" }
-                                              : BuildDungeonRewardText(FIRE_MEDALLION)) +
-      (StartingWaterMedallion.Value<uint8_t>() ? Text{ "##", "##", "##" }
-                                               : BuildDungeonRewardText(WATER_MEDALLION)) +
-      (StartingSpiritMedallion.Value<uint8_t>() ? Text{ "##", "##", "##" }
-                                                : BuildDungeonRewardText(SPIRIT_MEDALLION)) +
-      (StartingShadowMedallion.Value<uint8_t>() ? Text{ "##", "##", "##" }
-                                                : BuildDungeonRewardText(SHADOW_MEDALLION)) +
-
+  adultAltarText = Hint(ADULT_ALTAR_TEXT_START).GetText() + "^";
+  if (AltarHintText) {
+    adultAltarText = adultAltarText +
+    //Medallion Areas
+        (StartingLightMedallion.Value<uint8_t>() ? Text{ "##", "##", "##" }
+                                                : BuildDungeonRewardText(LIGHT_MEDALLION)) +
+        (StartingForestMedallion.Value<uint8_t>() ? Text{ "##", "##", "##" }
+                                                  : BuildDungeonRewardText(FOREST_MEDALLION)) +
+        (StartingFireMedallion.Value<uint8_t>() ? Text{ "##", "##", "##" }
+                                                : BuildDungeonRewardText(FIRE_MEDALLION)) +
+        (StartingWaterMedallion.Value<uint8_t>() ? Text{ "##", "##", "##" }
+                                                : BuildDungeonRewardText(WATER_MEDALLION)) +
+        (StartingSpiritMedallion.Value<uint8_t>() ? Text{ "##", "##", "##" }
+                                                  : BuildDungeonRewardText(SPIRIT_MEDALLION)) +
+        (StartingShadowMedallion.Value<uint8_t>() ? Text{ "##", "##", "##" }
+                                                  : BuildDungeonRewardText(SHADOW_MEDALLION));
+  }
+  adultAltarText = adultAltarText + 
   //Bridge requirement
   BuildBridgeReqsText()+
 
@@ -737,7 +751,65 @@ void CreateMerchantsHints() {
   CreateMessageFromTextObject(0x6078, 0, 2, 3, AddColorsAndFormat(carpetSalesmanTextTwo, {QM_RED, QM_YELLOW, QM_RED}));
 }
 
+void CreateDampesDiaryText() {
+  if (!DampeHintText) {
+    dampesText = Text();
+    return;
+  }
+
+  uint32_t item = PROGRESSIVE_HOOKSHOT;
+  uint32_t location = FilterFromPool(allLocations, [item](const uint32_t loc){return Location(loc)->GetPlaceduint32_t() == item;})[0];
+  Text area = GetHintRegion(Location(location)->GetParentRegionKey())->GetHint().GetText();
+  Text temp1 = Text{
+    "Whoever reads this, please enter %g", 
+    "Toi qui lit ce journal, rends-toi dans %g",
+    "Wer immer dies liest, der möge folgenden Ort aufsuchen: %g"
+  };
+
+  Text temp2 = {
+    "%w. I will let you have my stretching, shrinking keepsake.^I'm waiting for you.&--Dampé",
+    "%w. Et peut-être auras-tu droit à mon précieux %rtrésor%w.^Je t'attends...&--Igor",
+    "%w. Ihm gebe ich meinen langen, kurzen Schatz.^Ich warte!&Boris"
+  };
+  
+  dampesText = temp1 + area + temp2;
+}
+
+void CreateGregRupeeHint() {
+  if (!GregHintText) {
+    gregText = Text();
+    return;
+  }
+
+  uint32_t location = FilterFromPool(allLocations, [](const uint32_t loc){return Location(loc)->GetPlacedItemKey() == GREG_RUPEE;})[0];
+  Text area = GetHintRegion(Location(location)->GetParentRegionKey())->GetHint().GetText();
+
+  Text temp1 = Text{
+    "By the way, if you're interested, I saw the shiniest %gGreen Rupee%w somewhere in%g ",
+    "",
+    ""
+  };
+
+  Text temp2 = {
+    "%w.^It's said to have %rmysterious powers%w...^But then, it could just be another regular rupee.&Oh well.",
+    "",
+    ""
+  };
+
+    gregText = temp1 + area + temp2;
+}
+
 void CreateWarpSongTexts() {
+  if (!ShuffleWarpSongs) {
+    warpMinuetText = Text();
+    warpBoleroText = Text();
+    warpSerenadeText = Text();
+    warpRequiemText = Text();
+    warpNocturneText = Text();
+    warpPreludeText = Text();
+    return;
+  }
+
   auto warpSongEntrances = GetShuffleableEntrances(EntranceType::WarpSong, false);
 
   for (auto entrance : warpSongEntrances) {
@@ -777,9 +849,6 @@ void CreateWarpSongTexts() {
 
 void CreateAllHints() {
 
-  CreateGanonText();
-  CreateAltarText();
-
   SPDLOG_DEBUG("\nNOW CREATING HINTS\n");
   const HintSetting& hintSetting = hintSettingTable[Settings::HintDistribution.Value<uint8_t>()];
 
@@ -790,7 +859,9 @@ void CreateAllHints() {
   if (hintSetting.distTable[static_cast<int>(HintType::Always)].copies > 0) {
     // Only filter locations that had a random item placed at them (e.g. don't get cow locations if shuffle cows is off)
     auto alwaysHintLocations = FilterFromPool(allLocations, [](const uint32_t loc){
-        return Location(loc)->GetHint().GetType() == HintCategory::Always &&
+        return ((Location(loc)->GetHint().GetType() == HintCategory::Always) ||
+                // If we have Rainbow Bridge set to Greg, add a hint for where Greg is
+                (Bridge.Is(RAINBOWBRIDGE_GREG) && !GregHintText && Location(loc)->GetPlacedItemKey() == GREG_RUPEE)) &&
                Location(loc)->IsHintable()        && !(Location(loc)->IsHintedAt());
     });
 
