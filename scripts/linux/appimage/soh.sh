@@ -10,7 +10,7 @@ export SHIP_HOME=$PWD
 fi
 
 if [ -z ${SHIP_BIN_DIR+x} ]; then
-export SHIP_BIN_DIR="$HERE/usr/bin"
+export SHIP_BIN_DIR="$HERE"
 fi
 
 while [[ (! -e "$SHIP_HOME"/oot.otr) || (! -e "$SHIP_HOME"/oot-mq.otr) ]]; do
