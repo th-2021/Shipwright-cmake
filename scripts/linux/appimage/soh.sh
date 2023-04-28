@@ -9,6 +9,10 @@ if [ -z ${SHIP_HOME+x} ]; then
 export SHIP_HOME=$PWD
 fi
 
+if [ -z ${SHIP_BIN_DIR+x} ]; then
+export SHIP_BIN_DIR="$HERE/usr/bin"
+fi
+
 while [[ (! -e "$SHIP_HOME"/oot.otr) || (! -e "$SHIP_HOME"/oot-mq.otr) ]]; do
         for romfile in "$SHIP_HOME"/*.*64
         do
@@ -96,6 +100,7 @@ while [[ (! -e "$SHIP_HOME"/oot.otr) || (! -e "$SHIP_HOME"/oot-mq.otr) ]]; do
             exit
         else
             (cd "$HERE"; ./soh.elf)
+            (cd "$SHIP_BIN_DIR"; ./soh.elf)
             exit
         fi
         rm -r "$ASSETDIR"
